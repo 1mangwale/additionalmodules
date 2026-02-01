@@ -1,0 +1,59 @@
+http:
+  routers:
+    exotel-redirect:
+      rule: "Host(`exotel.mangwale.ai`)"
+      entryPoints:
+        - web
+      service: noop@internal
+      middlewares:
+        - redirect-to-https
+
+    exotel-ui:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: exotel-ui
+      tls:
+        certResolver: letsencrypt
+    ping:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/ping`)"
+      entryPoints:
+        - websecure
+      service: ping@internal
+      tls:
+        certResolver: letsencrypt
+    exotel-api:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/exotel`)"
+      entryPoints:
+        - websecure
+      service: exotel-svc
+      tls:
+        certResolver: letsencrypt
+    backend-api:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: backend-svc
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    exotel-ui:
+      loadBalancer:
+        servers:
+          - url: "http://escotel-exotel-ui-1:80"
+    exotel-svc:
+      loadBalancer:
+        servers:
+          - url: "http://escotel-exotel-service-1:3000"
+    backend-svc:
+      loadBalancer:
+        servers:
+          - url: "http://escotel-backend-1:4000"
+

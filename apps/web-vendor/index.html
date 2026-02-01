@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mangwale Vendor</title>
+  </head>
+  <body>
+    <div id="root"><div style="font-family:system-ui;padding:16px;color:#666">Loading vendor app…</div></div>
+    <noscript><div style="font-family:system-ui;padding:16px;color:#900">This app requires JavaScript enabled.</div></noscript>
+    <script>
+      window.addEventListener('error', function (e) {
+        const el = document.getElementById('root');
+        if (el) el.innerHTML = '<div style="font-family:system-ui;padding:16px;color:#900">Runtime error: ' + (e.error && e.error.message || e.message || String(e)) + '</div>'
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        const el = document.getElementById('root');
+        if (el) el.innerHTML = '<div style="font-family:system-ui;padding:16px;color:#900">Unhandled promise: ' + (e.reason && (e.reason.message || e.reason) || 'unknown') + '</div>'
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

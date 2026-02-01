@@ -1,0 +1,95 @@
+http:
+  routers:
+    exotel-redirect:
+      rule: "Host(`exotel.mangwale.ai`)"
+      entryPoints:
+        - web
+      service: noop@internal
+      middlewares:
+        - redirect-to-https
+
+    # Nerve API on Mercury (port 7100) - for Exotel callbacks
+    nerve-api:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/api/nerve`)"
+      entryPoints:
+        - websecure
+      service: nerve-service
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+
+    # Exotel JS Service on Mercury (port 3100)
+    exotel-api:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/exotel`)"
+      entryPoints:
+        - websecure
+      service: exotel-svc
+      middlewares:
+        - strip-exotel
+      tls:
+        certResolver: letsencrypt
+      priority: 90
+
+    # Backend API on Mercury (port 4000 internal)
+    backend-api:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: backend-svc
+      tls:
+        certResolver: letsencrypt
+      priority: 80
+
+    # Ping endpoint
+    ping:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/ping`)"
+      entryPoints:
+        - websecure
+      service: ping@internal
+      tls:
+        certResolver: letsencrypt
+
+    # UI on Mercury (port 3101)
+    exotel-ui:
+      rule: "Host(`exotel.mangwale.ai`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: exotel-ui
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    strip-exotel:
+      stripPrefix:
+        prefixes:
+          - "/exotel"
+
+  services:
+    # Nerve System on Mercury - for Exotel IVR callbacks
+    nerve-service:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.151:7100"
+
+    # Exotel JS Service on Mercury
+    exotel-svc:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.151:3100"
+
+    # Backend on Mercury
+    backend-svc:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.151:4000"
+
+    # UI on Mercury
+    exotel-ui:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.151:3101"

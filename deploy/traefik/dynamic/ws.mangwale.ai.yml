@@ -1,0 +1,37 @@
+# ws.mangwale.ai - Dedicated WebSocket subdomain for Mangwale Backend
+# This provides clean WebSocket routing without path conflicts
+http:
+  routers:
+    # ws.mangwale.ai - WebSocket dedicated endpoint
+    ws-mangwale-websocket:
+      rule: "Host(`ws.mangwale.ai`)"
+      entryPoints:
+        - websecure
+      service: ws-mangwale-backend
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+
+    # HTTP to HTTPS redirect for ws.mangwale.ai  
+    ws-mangwale-http-redirect:
+      rule: "Host(`ws.mangwale.ai`)"
+      entryPoints:
+        - web
+      middlewares:
+        - ws-https-redirect
+      service: ws-mangwale-backend
+      priority: 5
+
+  middlewares:
+    ws-https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    ws-mangwale-backend:
+      loadBalancer:
+        servers:
+          # Host IP (172.17.0.1 = Docker bridge gateway to host)
+          - url: "http://172.17.0.1:3000"
+        passHostHeader: true

@@ -1,0 +1,15 @@
+http:
+  routers:
+    search:
+      rule: Host(`search.mangwale.ai`)
+      entryPoints:
+        - web
+        - websecure
+      service: search
+      tls:
+        certResolver: letsencrypt
+  services:
+    search:
+      loadBalancer:
+        servers:
+          - url: "http://search-frontend-proxy:8080"

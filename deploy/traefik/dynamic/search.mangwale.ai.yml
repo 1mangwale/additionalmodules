@@ -1,0 +1,26 @@
+http:
+  routers:
+    search-redirect:
+      rule: Host(`search.mangwale.ai`)
+      entryPoints: [web]
+      service: noop@internal
+      middlewares: [redirect-to-https]
+
+    search-root:
+      rule: Host(`search.mangwale.ai`) && PathPrefix(`/`)
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: search-frontend
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    search-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://search-frontend:80"

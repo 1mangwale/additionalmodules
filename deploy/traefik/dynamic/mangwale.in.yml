@@ -1,0 +1,55 @@
+## Traefik dynamic configuration for mangwale.in (simplified)
+## Single production service + explicit basePath routing.
+
+http:
+  routers:
+    # HTTP -> HTTPS redirect
+    mw-https-redirect:
+      rule: "Host(`mangwale.in`)"
+      entryPoints: [web]
+      middlewares: [redirect-to-https]
+      service: mw-next-prod
+      priority: 1
+
+    # All prefixed app traffic; strip prefix before forwarding
+    mw-app-secure:
+      rule: "Host(`mangwale.in`) && PathPrefix(`/mangwale.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [strip-base-prefix]
+      service: mw-next-prod
+      priority: 100
+
+    # Root redirect to prefixed app path
+    mw-root-redirect:
+      rule: "Host(`mangwale.in`) && Path(`/`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [redirect-root-to-basepath]
+      service: mw-next-prod
+      priority: 120
+
+  middlewares:
+    redirect-root-to-basepath:
+      redirectRegex:
+        regex: "^/$"
+        replacement: "/mangwale.com"
+        permanent: true
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    strip-base-prefix:
+      stripPrefix:
+        prefixes:
+          - /mangwale.com
+        forceSlash: true
+
+  services:
+    mw-next-prod:
+      loadBalancer:
+        servers:
+          - url: "http://mangwale.in:3000"
+        passHostHeader: true

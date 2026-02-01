@@ -1,0 +1,111 @@
+http:
+  routers:
+    admin-redirect:
+      rule: "Host(`admin.mangwale.ai`)"
+      entryPoints:
+        - web
+      service: noop@internal
+      middlewares:
+        - redirect-to-https
+
+    admin-api:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: admin-backend
+      middlewares:
+        - admin-strip-api
+      tls:
+        certResolver: letsencrypt
+
+    admin-ls:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/ls`)"
+      entryPoints:
+        - websecure
+      service: label-studio
+      middlewares:
+        - admin-strip-ls
+      tls:
+        certResolver: letsencrypt
+
+    admin-tts:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/tts/api`)"
+      entryPoints:
+        - websecure
+      service: tts
+      middlewares:
+        - admin-strip-tts
+      tls:
+        certResolver: letsencrypt
+
+    admin-xtts:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/xtts`)"
+      entryPoints:
+        - websecure
+      service: xtts
+      middlewares:
+        - admin-strip-xtts
+      tls:
+        certResolver: letsencrypt
+
+    admin-asr:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/asr-proxy`)"
+      entryPoints:
+        - websecure
+      service: asr-proxy
+      middlewares:
+        - admin-strip-asr
+      tls:
+        certResolver: letsencrypt
+
+    admin-root:
+      rule: "Host(`admin.mangwale.ai`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: admin-backend
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    admin-strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"
+    admin-strip-ls:
+      stripPrefix:
+        prefixes:
+          - "/ls"
+    admin-strip-tts:
+      stripPrefix:
+        prefixes:
+          - "/tts"
+    admin-strip-xtts:
+      stripPrefix:
+        prefixes:
+          - "/xtts"
+    admin-strip-asr:
+      stripPrefix:
+        prefixes:
+          - "/asr-proxy"
+
+  services:
+    admin-backend:
+      loadBalancer:
+        servers:
+          - url: "http://admin-backend:8080"
+    label-studio:
+      loadBalancer:
+        servers:
+          - url: "http://label-studio:8080"
+    tts:
+      loadBalancer:
+        servers:
+          - url: "http://tts:5500"
+    xtts:
+      loadBalancer:
+        servers:
+          - url: "http://xtts:5501"
+    asr-proxy:
+      loadBalancer:
+        servers:
+          - url: "http://asr-proxy:8000"

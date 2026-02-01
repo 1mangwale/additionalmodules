@@ -1,0 +1,107 @@
+# chat.mangwale.ai and mangwale.ai - Mangwale Chat Frontend
+http:
+  routers:
+    # WebSocket proxy - socket.io to backend (HIGHEST PRIORITY)
+    chat-websocket:
+      rule: "Host(`chat.mangwale.ai`) && PathPrefix(`/socket.io`)"
+      entryPoints:
+        - websecure
+      service: mangwale-backend-ws
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+
+    # TTS routes to FRONTEND (Next.js transforms response) - HIGHER than /api
+    chat-tts:
+      rule: "Host(`chat.mangwale.ai`) && PathPrefix(`/api/tts`)"
+      entryPoints:
+        - websecure
+      service: mangwale-dashboard
+      tls:
+        certResolver: letsencrypt
+      priority: 60
+
+    # ASR routes to FRONTEND (Next.js transforms response) - HIGHER than /api
+    chat-asr:
+      rule: "Host(`chat.mangwale.ai`) && PathPrefix(`/api/asr`)"
+      entryPoints:
+        - websecure
+      service: mangwale-dashboard
+      tls:
+        certResolver: letsencrypt
+      priority: 60
+
+    # API proxy - /api routes to backend (EXCEPT TTS/ASR above)
+    chat-api:
+      rule: "Host(`chat.mangwale.ai`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: mangwale-backend-api
+      tls:
+        certResolver: letsencrypt
+      priority: 50
+
+    # chat.mangwale.ai - Main chat interface (frontend)
+    chat-frontend:
+      rule: "Host(`chat.mangwale.ai`)"
+      entryPoints:
+        - websecure
+      service: mangwale-dashboard
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+
+    # mangwale.ai - Root domain landing page
+    mangwale-root:
+      rule: "Host(`mangwale.ai`)"
+      entryPoints:
+        - websecure
+      service: mangwale-dashboard
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+
+    # HTTP to HTTPS redirect for chat.mangwale.ai
+    chat-http-redirect:
+      rule: "Host(`chat.mangwale.ai`)"
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: mangwale-dashboard
+      priority: 5
+
+    # HTTP to HTTPS redirect for mangwale.ai
+    mangwale-http-redirect:
+      rule: "Host(`mangwale.ai`)"
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: mangwale-dashboard
+      priority: 5
+
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    mangwale-dashboard:
+      loadBalancer:
+        servers:
+          # Docker container
+          - url: "http://mangwale-dashboard:3005"
+        
+    mangwale-backend-ws:
+      loadBalancer:
+        servers:
+          # Host IP (172.17.0.1 = Docker bridge gateway to host)
+          - url: "http://172.17.0.1:3000"
+    
+    mangwale-backend-api:
+      loadBalancer:
+        servers:
+          # Host IP (172.17.0.1 = Docker bridge gateway to host)
+          - url: "http://172.17.0.1:3000"

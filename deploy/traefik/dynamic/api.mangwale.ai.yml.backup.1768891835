@@ -1,0 +1,34 @@
+# api.mangwale.ai - Backend API and WebSocket
+http:
+  routers:
+    # API routes (HTTPS)
+    api-backend:
+      rule: "Host(`api.mangwale.ai`)"
+      entryPoints:
+        - websecure
+      service: mangwale-backend
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+
+    # HTTP to HTTPS redirect
+    api-http-redirect:
+      rule: "Host(`api.mangwale.ai`)"
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: mangwale-backend
+      priority: 5
+
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    mangwale-backend:
+      loadBalancer:
+        servers:
+          - url: "http://mangwale_ai_dev:3200"

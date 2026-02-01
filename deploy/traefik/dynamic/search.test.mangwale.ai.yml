@@ -1,0 +1,35 @@
+http:
+  routers:
+    search-test-redirect:
+      rule: Host(`search.test.mangwale.ai`)
+      entryPoints: [web]
+      service: noop@internal
+      middlewares: [redirect-to-https]
+
+    search-test-root:
+      rule: Host(`search.test.mangwale.ai`)
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: search-frontend
+      middlewares: [search-headers]
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    
+    search-headers:
+      headers:
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+
+  services:
+    search-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://search-frontend:80"

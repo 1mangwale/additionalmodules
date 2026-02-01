@@ -1,0 +1,70 @@
+http:
+  routers:
+    web-redirect:
+      rule: "Host(`test.mangwale.ai`)"
+      entryPoints:
+        - web
+      service: noop@internal
+      middlewares:
+        - redirect-to-https
+
+    spa:
+      rule: "Host(`test.mangwale.ai`) && (PathPrefix(`/user`) || PathPrefix(`/vendor`))"
+      entryPoints:
+        - websecure
+      service: spa
+      tls:
+        certResolver: letsencrypt
+
+    api:
+      rule: "Host(`test.mangwale.ai`) && (PathPrefix(`/rooms`) || PathPrefix(`/services`) || PathPrefix(`/pricing`) || PathPrefix(`/movies`) || PathPrefix(`/search`))"
+      entryPoints:
+        - websecure
+      service: gateway
+      tls:
+        certResolver: letsencrypt
+
+    gateway-health:
+      rule: "Host(`test.mangwale.ai`) && PathPrefix(`/gateway`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - strip-gateway
+      service: gateway
+      tls:
+        certResolver: letsencrypt
+      
+    root:
+      rule: "Host(`test.mangwale.ai`) && Path(`/`)"
+      entryPoints:
+        - websecure
+      service: spa
+      middlewares:
+        - redirect-user
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    redirect-user:
+      redirectRegex:
+        regex: "^https?://([^/]+)/$"
+        replacement: "https://$1/user/"
+        permanent: true
+    strip-gateway:
+      stripPrefix:
+        prefixes:
+          - "/gateway"
+
+  services:
+    spa:
+      loadBalancer:
+        servers:
+          - url: "http://spa:80"
+    gateway:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.156:4000"

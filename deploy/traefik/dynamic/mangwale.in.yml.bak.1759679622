@@ -1,0 +1,58 @@
+# Traefik dynamic configuration for mangwale.in
+# Updated to point to production container 'mangwale.in' (was mangwale-frontend / mangwale-frontend-prod)
+
+http:
+  routers:
+    mw-https-redirect:
+      rule: "Host(`mangwale.in`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+      service: mw-next-prod
+      priority: 1
+    mw-next-prefix-https:
+      rule: "Host(`mangwale.in`) && PathPrefix(`/mangwale.com`)"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      service: mw-next-prod
+      priority: 100
+    # Canary router removed (unused). Re-add with proper header match if needed for blue/green.
+    mw-root-only-https:
+      rule: "Host(`mangwale.in`) && Path(`/`)"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - redirect-to-prefix
+      service: mw-next-prod
+      priority: 150
+    mw-next-catchall-https:
+      rule: "Host(`mangwale.in`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - redirect-to-prefix
+      service: mw-next-prod
+      priority: 1
+  middlewares:
+    redirect-to-prefix:
+      redirectRegex:
+        regex: "^/(.*)"
+        replacement: "/mangwale.com/$1"
+        permanent: false
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+  services:
+    mw-next-prod:
+      loadBalancer:
+        servers:
+          - url: "http://mangwale.in:3000"
+        passHostHeader: true

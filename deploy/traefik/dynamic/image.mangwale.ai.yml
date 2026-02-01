@@ -1,0 +1,41 @@
+http:
+  routers:
+    imageai-web-redirect:
+      rule: "Host(`image.mangwale.ai`)"
+      entryPoints:
+        - web
+      service: noop@internal
+      middlewares:
+        - redirect-to-https
+
+    imageai-api:
+      rule: "Host(`image.mangwale.ai`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: imageai-api
+      tls:
+        certResolver: letsencrypt
+
+    imageai-frontend:
+      rule: "Host(`image.mangwale.ai`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: imageai-frontend
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    imageai-api:
+      loadBalancer:
+        servers:
+          - url: "http://image-ai-api:3000"
+    imageai-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://image-ai-frontend:80"

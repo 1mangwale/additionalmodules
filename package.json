@@ -1,0 +1,35 @@
+{
+  "name": "mangwale-v2",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -ws build",
+    "dev:all": "concurrently -n gateway,rooms,services,pricing,finance,movies -c green,cyan,magenta,yellow,blue,red \"npm:dev --workspace=apps/gateway\" \"npm:dev --workspace=apps/rooms\" \"npm:dev --workspace=apps/services-api\" \"npm:dev --workspace=apps/pricing\" \"npm:dev --workspace=apps/bridge-finance\" \"npm:dev --workspace=apps/movies\"",
+    "dev:web-user": "npm run dev --workspace=apps/web-user",
+    "dev:web-vendor": "npm run dev --workspace=apps/web-vendor",
+    "dev:web": "concurrently -n user,vendor -c cyan,magenta \"npm:dev:web-user\" \"npm:dev:web-vendor\"",
+    "lint": "npm run -ws lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/typeorm": "^11.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.1",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.26"
+  }
+}

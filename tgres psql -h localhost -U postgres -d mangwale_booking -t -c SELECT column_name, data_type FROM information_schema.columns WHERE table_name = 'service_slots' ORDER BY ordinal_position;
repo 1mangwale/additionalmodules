@@ -1,0 +1,14 @@
+                                      Table "public.service_slots"
+   Column   |          Type          | Collation | Nullable |                  Default                  
+------------+------------------------+-----------+----------+-------------------------------------------
+ id         | bigint                 |           | not null | nextval('service_slots_id_seq'::regclass)
+ store_id   | bigint                 |           | not null | 
+ date       | date                   |           | not null | 
+ start_time | time without time zone |           | not null | 
+ end_time   | time without time zone |           | not null | 
+ capacity   | integer                |           | not null | 1
+ booked     | integer                |           | not null | 0
+Indexes:
+    "service_slots_pkey" PRIMARY KEY, btree (id)
+    "service_slots_store_id_date_start_time_end_time_key" UNIQUE CONSTRAINT, btree (store_id, date, start_time, end_time)
+

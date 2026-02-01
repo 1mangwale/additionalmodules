@@ -1,0 +1,35 @@
+http:
+  routers:
+    jobs-redirect:
+      rule: Host(`job.mangwale.com`)
+      entryPoints: [web]
+      middlewares: [redirect-to-https]
+      service: noop@internal
+    jobs-frontend:
+      rule: Host(`job.mangwale.com`) && PathPrefix(`/`)
+      entryPoints: [websecure]
+      tls: {}
+      service: jobs-frontend
+    jobs-backend:
+      rule: Host(`job.mangwale.com`) && PathPrefix(`/api`)
+      entryPoints: [websecure]
+      tls: {}
+      middlewares: [strip-api]
+      service: jobs-backend
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    strip-api:
+      stripPrefix:
+        prefixes: ["/api"]
+  services:
+    jobs-frontend:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:5174
+    jobs-backend:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:3001

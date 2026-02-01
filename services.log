@@ -1,0 +1,5 @@
+[pricing] npm run dev --workspace=apps/pricing exited with code 1
+[rooms] npm run dev --workspace=apps/rooms exited with code 1
+[finance] npm run dev --workspace=apps/bridge-finance exited with code 1
+[gateway] npm run dev --workspace=apps/gateway exited with code 1
+[services] npm run dev --workspace=apps/services-api exited with code 1

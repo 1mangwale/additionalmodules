@@ -1,0 +1,28 @@
+-- Movies module schema
+CREATE TABLE IF NOT EXISTS movies (
+  id BIGSERIAL PRIMARY KEY,
+  store_id BIGINT NOT NULL,
+  title TEXT NOT NULL,
+  genre TEXT NULL,
+  duration_min INT NOT NULL DEFAULT 120,
+  status SMALLINT NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS screens (
+  id BIGSERIAL PRIMARY KEY,
+  store_id BIGINT NOT NULL,
+  name TEXT NOT NULL,
+  seat_count INT NOT NULL DEFAULT 100
+);
+
+CREATE TABLE IF NOT EXISTS showtimes (
+  id BIGSERIAL PRIMARY KEY,
+  store_id BIGINT NOT NULL,
+  movie_id BIGINT NOT NULL,
+  screen_id BIGINT NOT NULL,
+  starts_at TIMESTAMP NOT NULL,
+  booked INT NOT NULL DEFAULT 0,
+  base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  CONSTRAINT fk_showtimes_movie FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+  CONSTRAINT fk_showtimes_screen FOREIGN KEY (screen_id) REFERENCES screens (id) ON DELETE CASCADE
+);
