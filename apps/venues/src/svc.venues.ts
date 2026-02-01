@@ -15,7 +15,7 @@ export class VenuesService {
     constructor(
         @InjectRepository(VenueType) private readonly venueTypes: Repository<VenueType>,
         @InjectRepository(VenueSlot) private readonly slots: Repository<VenueSlot>,
-        @InjectRepository(VenueBooking) private readonly bookingRepo: Repository<VenueBooking>,
+        @InjectRepository(VenueBooking) private readonly bookings: Repository<VenueBooking>,
         @InjectRepository(StoreWorkingHours) private readonly workingHoursRepo: Repository<StoreWorkingHours>,
         @InjectRepository(VenuePeakPricing) private readonly peakPricingRepo: Repository<VenuePeakPricing>
     ) { }

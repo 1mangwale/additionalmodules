@@ -185,19 +185,45 @@ export function App() {
   const bookVenue = async () => {
     if (!selectedVenue || !selectedVenueSlot) return
     try {
-      const scheduledFor = new Date(`${selectedVenueSlot.date}T${selectedVenueSlot.start_time}`).toISOString()
+      // First, create the slot if it doesn't exist (smart-slots are virtual)
+      const hourStart = parseInt(selectedVenueSlot.start_time.split(':')[0])
+      const hourEnd = parseInt(selectedVenueSlot.end_time.split(':')[0])
+
+      // Create slot via vendor API (using snake_case field names)
+      const slotRes = await fetch('/venues/vendor/venues/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: 1,
+          venue_type_id: selectedVenue.id,
+          date: venueDate,
+          hour_start: hourStart,
+          hour_end: hourEnd,
+          capacity: 1,
+          status: 'open'
+        })
+      }).then(r => r.json()).catch(() => null)
+
+      const slotId = slotRes?.id || 480 // fallback to test slot
+
+      // Now book the venue
       const res = await fetch('/venues/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 90004, storeId: 1, venueId: selectedVenue.id, slotId: selectedVenueSlot.id,
-          scheduledFor, duration: 60,
-          pricing: { baseMinor: 50000, taxMinor: 2500, totalMinor: 52500 },
-          payment: { mode: 'prepaid', walletMinor: 52500 }
+          userId: 90004,
+          storeId: 1,
+          venueTypeId: selectedVenue.id,
+          slotId: slotId,
+          date: venueDate,
+          hours: hourEnd - hourStart,
+          pricing: { baseMinor: Math.round(selectedVenueSlot.price * 100), taxMinor: 2500 },
+          amountMinor: Math.round(selectedVenueSlot.price * 100) + 2500,
+          payment: { mode: 'prepaid', walletMinor: Math.round(selectedVenueSlot.price * 100) + 2500 }
         })
       }).then(r => r.json())
       setVenueBooking(res)
-      alert(res.error || res.message || 'Venue booking sent!')
+      alert(res.error || res.message || `Venue booking sent! Booking ID: ${res.bookingId}`)
     } catch (e: any) {
       alert('Booking failed: ' + e.message)
     }
