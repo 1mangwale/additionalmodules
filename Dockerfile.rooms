@@ -1,0 +1,30 @@
+# Rooms API Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY tsconfig.base.json ./
+COPY packages ./packages
+COPY apps/rooms ./apps/rooms
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build shared package first
+WORKDIR /app/packages/shared
+RUN pnpm build
+
+# Build rooms
+WORKDIR /app/apps/rooms
+RUN pnpm build
+
+# Expose port
+EXPOSE 4001
+
+# Start the service
+CMD ["node", "dist/main.js"]

@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (already running as mwv2-postgres)
+  # We'll use the existing container via external network
+  
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: mangwale-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    depends_on:
+      - services-api
+      - venues-api
+      - rooms-api
+      - movies-api
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  services-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    container_name: mangwale-services
+    ports:
+      - "4002:4002"
+    environment:
+      - NODE_ENV=production
+      - PORT=4002
+      - DB_HOST=mwv2-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mangwale_booking
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  venues-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.venues
+    container_name: mangwale-venues
+    ports:
+      - "4007:4007"
+    environment:
+      - NODE_ENV=production
+      - PORT=4007
+      - DB_HOST=mwv2-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mangwale_booking
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  rooms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.rooms
+    container_name: mangwale-rooms
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DB_HOST=mwv2-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mangwale_booking
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  movies-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.movies
+    container_name: mangwale-movies
+    ports:
+      - "4005:4005"
+    environment:
+      - NODE_ENV=production
+      - PORT=4005
+      - DB_HOST=mwv2-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mangwale_booking
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  web-user:
+    build:
+      context: ./apps/web-user
+      dockerfile: Dockerfile
+    container_name: mangwale-web-user
+    ports:
+      - "5173:80"
+    depends_on:
+      - gateway
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  web-vendor:
+    build:
+      context: ./apps/web-vendor
+      dockerfile: Dockerfile
+    container_name: mangwale-web-vendor
+    ports:
+      - "5174:80"
+    depends_on:
+      - gateway
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+networks:
+  mangwale-network:
+    external: true
+    name: mwv2-network
+
+# Note: The database (mwv2-postgres) should be on the same network
+# Run this first if needed:
+# docker network create mwv2-network
+# docker network connect mwv2-network mwv2-postgres

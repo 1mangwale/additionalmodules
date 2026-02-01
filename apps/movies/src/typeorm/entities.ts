@@ -6,6 +6,7 @@ export class Movie {
   @Column({ type: 'bigint' }) store_id!: number; // vendor
   @Column({ type: 'text' }) title!: string;
   @Column({ type: 'text', nullable: true }) genre!: string | null;
+  @Column({ type: 'varchar', length: 50, default: 'English' }) language!: string;
   @Column({ type: 'int', default: 120 }) duration_min!: number;
   @Column({ type: 'smallint', default: 1 }) status!: number;
   @Column({ type: 'int', default: 20 }) buffer_time_min!: number;
