@@ -94,8 +94,9 @@ export function App() {
 
   const loadServiceSlots = async (serviceId: number) => {
     try {
-      const res = await fetch(`/services/slots?store_id=1&date=${serviceDate}`).then(r => r.json())
-      setServiceSlots(res.items || res || [])
+      // Use smart-slots endpoint with duration & buffer time
+      const res = await fetch(`/services/smart-slots?service_id=${serviceId}&date=${serviceDate}&store_id=1`).then(r => r.json())
+      setServiceSlots(res.available_slots || res.items || res || [])
     } catch (e) {
       console.error(e)
     }
@@ -172,8 +173,9 @@ export function App() {
 
   const loadVenueSlots = async (venueId: number) => {
     try {
-      const res = await fetch(`/venues/slots?store_id=1&venue_id=${venueId}&date=${venueDate}`).then(r => r.json())
-      setVenueSlots(res.items || res || [])
+      // Use smart-slots endpoint with peak pricing
+      const res = await fetch(`/venues/smart-slots?venue_type_id=${venueId}&date=${venueDate}&store_id=1`).then(r => r.json())
+      setVenueSlots(res.available_slots || res.slots || res.items || res || [])
     } catch (e) {
       console.error(e)
     }
@@ -340,14 +342,14 @@ export function App() {
 
                 {serviceSlots.length > 0 && (
                   <div style={{ marginTop: '15px' }}>
-                    <p><strong>Available Slots:</strong></p>
-                    {serviceSlots.map((slot: any) => (
+                    <p><strong>Available Slots (with buffer time):</strong></p>
+                    {serviceSlots.map((slot: any, idx: number) => (
                       <button
-                        key={slot.id}
+                        key={idx}
                         onClick={() => setSelectedSlot(slot)}
-                        style={{ ...styles.button, background: selectedSlot?.id === slot.id ? '#764ba2' : '#667eea', marginBottom: '5px' }}
+                        style={{ ...styles.button, background: selectedSlot?.start_time === slot.start_time ? '#764ba2' : '#667eea', marginBottom: '5px' }}
                       >
-                        {slot.start_time} - {slot.end_time} ({slot.capacity - (slot.booked || 0)} available)
+                        ⏰ {slot.start_time} - {slot.end_time} ({slot.duration_min}min + {slot.buffer_min}min buffer)
                       </button>
                     ))}
                   </div>
@@ -477,14 +479,14 @@ export function App() {
 
                 {venueSlots.length > 0 && (
                   <div style={{ marginTop: '15px' }}>
-                    <p><strong>Available Time Slots:</strong></p>
-                    {venueSlots.map((slot: any) => (
+                    <p><strong>Available Time Slots (with peak pricing):</strong></p>
+                    {venueSlots.map((slot: any, idx: number) => (
                       <button
-                        key={slot.id}
+                        key={idx}
                         onClick={() => setSelectedVenueSlot(slot)}
-                        style={{ ...styles.button, background: selectedVenueSlot?.id === slot.id ? '#764ba2' : '#667eea', marginBottom: '5px', marginRight: '5px' }}
+                        style={{ ...styles.button, background: selectedVenueSlot?.start_time === slot.start_time ? '#764ba2' : '#667eea', marginBottom: '5px', marginRight: '5px' }}
                       >
-                        {slot.start_time} - {slot.end_time} {slot.booked ? '(Booked)' : '(Available)'}
+                        ⏰ {slot.start_time} - {slot.end_time} | 💰 ₹{slot.price} {slot.price > (selectedVenue.base_price || 800) ? '🔥' : ''}
                       </button>
                     ))}
                   </div>
@@ -492,8 +494,8 @@ export function App() {
 
                 {selectedVenueSlot && (
                   <div style={{ marginTop: '15px' }}>
-                    <p><strong>Time:</strong> {selectedVenueSlot.start_time} - {selectedVenueSlot.end_time}</p>
-                    <p><strong>Price:</strong> ₹525 (base ₹500 + tax ₹25)</p>
+                    <p><strong>Time:</strong> {selectedVenueSlot.start_time} - {selectedVenueSlot.end_time} ({selectedVenueSlot.duration_min}min + {selectedVenueSlot.buffer_min}min buffer)</p>
+                    <p><strong>Price:</strong> ₹{selectedVenueSlot.price} {selectedVenueSlot.price > (selectedVenue.base_price || 800) ? '(Peak Hour 🔥)' : '(Off-Peak)'}</p>
                     <button onClick={bookVenue} style={styles.button}>Confirm Venue Booking</button>
                   </div>
                 )}
