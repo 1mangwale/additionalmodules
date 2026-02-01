@@ -105,7 +105,8 @@ export function App() {
   const bookService = async () => {
     if (!selectedService || !selectedSlot) return
     try {
-      const scheduledFor = new Date(`${selectedSlot.date}T${selectedSlot.start_time}`).toISOString()
+      // Construct proper ISO date from serviceDate (YYYY-MM-DD) and start_time (HH:MM)
+      const scheduledFor = `${serviceDate}T${selectedSlot.start_time}:00.000Z`
       const res = await fetch('/services/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
