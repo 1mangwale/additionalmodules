@@ -33,7 +33,7 @@ export function App() {
   const [rt, setRt] = useState({ store_id: 1, name: '', occupancy_adults: 2, occupancy_children: 0 })
   const [rp, setRp] = useState({ room_type_id: 1, name: '', refundable: true, pricing_mode: 'flat' })
   // Service form state
-  const [svc, setSvc] = useState({ store_id: 1, name: '', category: 'general', pricing_model: 'dynamic', base_price: 0, visit_fee: 0, at_customer_location: true, status: 1 })
+  const [svc, setSvc] = useState({ store_id: 1, name: '', category: 'general', pricing_model: 'dynamic', base_price: 0, visit_fee: 0, at_customer_location: true, status: 1, duration_min: 60, buffer_time_min: 15 })
   // Slot form state
   const [slot, setSlot] = useState({ store_id: 1, date: '', start_time: '10:00:00', end_time: '12:00:00', capacity: 1 })
   // Movies advanced
@@ -97,7 +97,7 @@ export function App() {
     if (!svc.name.trim()) return
     const created = await postJSON('/services/vendor/services/catalog', { ...svc, store_id: vendorStoreId })
     setServices(prev => [created, ...prev])
-    setSvc({ store_id: svc.store_id, name: '', category: 'general', pricing_model: 'dynamic', base_price: 0, visit_fee: 0, at_customer_location: true, status: 1 })
+    setSvc({ store_id: svc.store_id, name: '', category: 'general', pricing_model: 'dynamic', base_price: 0, visit_fee: 0, at_customer_location: true, status: 1, duration_min: 60, buffer_time_min: 15 })
   }
 
   // Room inventory: add/refresh
@@ -127,10 +127,10 @@ export function App() {
   }
 
   // Movies forms
-  const [mv, setMv] = useState({ store_id: 1, title: '', genre: '', duration_min: 120 })
+  const [mv, setMv] = useState({ store_id: 1, title: '', genre: '', duration_min: 120, buffer_time_min: 20, language: 'English' })
   const [scr, setScr] = useState({ store_id: 1, name: '', seat_count: 100 })
   const [st, setSt] = useState({ store_id: 1, movie_id: 1, screen_id: 1, starts_at: '', base_price: 200 })
-  const addMovie = async (e: React.FormEvent) => { e.preventDefault(); const created = await postJSON('/movies/vendor/movies/catalog', { ...mv, store_id: vendorStoreId }); setMovies(p => [created, ...p]); setMv({ store_id: mv.store_id, title: '', genre: '', duration_min: 120 }) }
+  const addMovie = async (e: React.FormEvent) => { e.preventDefault(); const created = await postJSON('/movies/vendor/movies/catalog', { ...mv, store_id: vendorStoreId }); setMovies(p => [created, ...p]); setMv({ store_id: mv.store_id, title: '', genre: '', duration_min: 120, buffer_time_min: 20, language: 'English' }) }
   const addScreen = async (e: React.FormEvent) => { e.preventDefault(); const created = await postJSON('/movies/vendor/movies/screens', { ...scr, store_id: vendorStoreId }); setScreens(p => [created, ...p]); setScr({ store_id: scr.store_id, name: '', seat_count: 100 }) }
   const addShowtime = async (e: React.FormEvent) => { e.preventDefault(); const created = await postJSON('/movies/vendor/movies/showtimes', { ...st, store_id: vendorStoreId, starts_at: new Date(st.starts_at).toISOString() }); setShowtimes(p => [created, ...p]); }
 
@@ -226,6 +226,8 @@ export function App() {
             </label>
             <label>Base Price<input style={field} type="number" step="0.01" value={svc.base_price} onChange={e => setSvc({ ...svc, base_price: Number(e.target.value) })} /></label>
             <label>Transport/Visit Fee<input style={field} type="number" step="0.01" value={svc.visit_fee} onChange={e => setSvc({ ...svc, visit_fee: Number(e.target.value) })} /></label>
+            <label>Duration (min)<input style={field} type="number" value={svc.duration_min} onChange={e => setSvc({ ...svc, duration_min: Number(e.target.value) })} placeholder="60" /></label>
+            <label>Buffer Time (min)<input style={field} type="number" value={svc.buffer_time_min} onChange={e => setSvc({ ...svc, buffer_time_min: Number(e.target.value) })} placeholder="0 for no buffer" /></label>
             <label><input type="checkbox" checked={svc.at_customer_location} onChange={e => setSvc({ ...svc, at_customer_location: e.target.checked })} /> At customer location</label>
             <label>Status<input style={field} type="number" value={svc.status} onChange={e => setSvc({ ...svc, status: Number(e.target.value) })} /></label>
             <button type="submit">+ Add Service</button>
@@ -265,7 +267,9 @@ export function App() {
             <label>Store ID<input style={field} type="number" value={mv.store_id} onChange={e => setMv({ ...mv, store_id: Number(e.target.value) })} /></label>
             <label>Title<input style={field} type="text" value={mv.title} onChange={e => setMv({ ...mv, title: e.target.value })} /></label>
             <label>Genre<input style={field} type="text" value={mv.genre} onChange={e => setMv({ ...mv, genre: e.target.value })} /></label>
+            <label>Language<input style={field} type="text" value={mv.language} onChange={e => setMv({ ...mv, language: e.target.value })} placeholder="English" /></label>
             <label>Duration (min)<input style={field} type="number" value={mv.duration_min} onChange={e => setMv({ ...mv, duration_min: Number(e.target.value) })} /></label>
+            <label>Buffer Time (min)<input style={field} type="number" value={mv.buffer_time_min} onChange={e => setMv({ ...mv, buffer_time_min: Number(e.target.value) })} placeholder="0 for no buffer" /></label>
             <button type="submit">+ Add Movie</button>
           </div>
         </form>
@@ -356,7 +360,7 @@ export function App() {
 
       <section>
         <h2>Venues Management</h2>
-        <form onSubmit={async (e) => { e.preventDefault(); const vn = { store_id: vendorStoreId, name: (document.getElementById('venue-name') as HTMLInputElement)?.value || '', venue_category: (document.getElementById('venue-cat') as HTMLSelectElement)?.value || 'cricket_turf', hourly_rate_minor: Number((document.getElementById('venue-rate') as HTMLInputElement)?.value || 200000), description: (document.getElementById('venue-desc') as HTMLTextAreaElement)?.value || '', facilities: (document.getElementById('venue-fac') as HTMLInputElement)?.value || '' }; const created = await postJSON('/venues/vendor/venues/catalog', vn); setVenues(p => [created, ...p]) }} style={card}>
+        <form onSubmit={async (e) => { e.preventDefault(); const vn = { store_id: vendorStoreId, name: (document.getElementById('venue-name') as HTMLInputElement)?.value || '', venue_category: (document.getElementById('venue-cat') as HTMLSelectElement)?.value || 'cricket_turf', hourly_rate_minor: Number((document.getElementById('venue-rate') as HTMLInputElement)?.value || 200000), session_duration_min: Number((document.getElementById('venue-duration') as HTMLInputElement)?.value || 60), buffer_time_min: Number((document.getElementById('venue-buffer') as HTMLInputElement)?.value ?? 15), description: (document.getElementById('venue-desc') as HTMLTextAreaElement)?.value || '', facilities: (document.getElementById('venue-fac') as HTMLInputElement)?.value || '' }; const created = await postJSON('/venues/vendor/venues/catalog', vn); setVenues(p => [created, ...p]) }} style={card}>
           <div style={row}>
             <label>Name<input style={field} id="venue-name" type="text" placeholder="Cricket Turf" /></label>
             <label>Category
@@ -368,6 +372,8 @@ export function App() {
               </select>
             </label>
             <label>Hourly Rate (₹)<input style={field} id="venue-rate" type="number" defaultValue="200" /></label>
+            <label>Session Duration (min)<input style={field} id="venue-duration" type="number" defaultValue="60" placeholder="60" /></label>
+            <label>Buffer Time (min)<input style={field} id="venue-buffer" type="number" defaultValue="15" placeholder="0 for no buffer" /></label>
             <label>Description<input style={field} id="venue-desc" type="text" placeholder="Professional cricket turf" /></label>
             <label>Facilities<input style={field} id="venue-fac" type="text" placeholder="Floodlights, Changing rooms" /></label>
             <button type="submit">+ Add Venue</button>
