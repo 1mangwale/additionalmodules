@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY apps/restaurants/package.json ./
+COPY apps/restaurants/tsconfig.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY apps/restaurants/src ./src
+
+# Expose port
+EXPOSE 4008
+
+# Start the service
+CMD ["npm", "run", "dev"]

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-type Tab = 'rooms' | 'services' | 'movies' | 'venues'
+type Tab = 'rooms' | 'services' | 'movies' | 'venues' | 'restaurants'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('rooms')
@@ -39,22 +39,37 @@ export function App() {
   const [selectedVenueSlot, setSelectedVenueSlot] = useState<any>(null)
   const [venueBooking, setVenueBooking] = useState<any>(null)
 
+  // Restaurant booking state
+  const [restaurants, setRestaurants] = useState<any[]>([])
+  const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null)
+  const [restaurantDate, setRestaurantDate] = useState('2026-05-15')
+  const [restaurantTime, setRestaurantTime] = useState('19:00')
+  const [partySize, setPartySize] = useState(4)
+  const [availableTables, setAvailableTables] = useState<any[]>([])
+  const [selectedTable, setSelectedTable] = useState<any>(null)
+  const [customerName, setCustomerName] = useState('Alice Johnson')
+  const [customerPhone, setCustomerPhone] = useState('+1234567890')
+  const [specialRequests, setSpecialRequests] = useState('')
+  const [restaurantBooking, setRestaurantBooking] = useState<any>(null)
+
   useEffect(() => {
     loadInitialData()
   }, [])
 
   const loadInitialData = async () => {
     try {
-      const [roomsRes, servicesRes, moviesRes, venuesRes] = await Promise.all([
+      const [roomsRes, servicesRes, moviesRes, venuesRes, restaurantsRes] = await Promise.all([
         fetch(`/rooms/search?checkin=${checkin}&checkout=${checkout}&guests=${guests}`).then(r => r.json()).catch(() => ({ items: [] })),
         fetch('/services/catalog').then(r => r.json()).catch(() => ({ items: [] })),
         fetch('/movies/catalog').then(r => r.json()).catch(() => ({ items: [] })),
-        fetch('/venues/catalog').then(r => r.json()).catch(() => ({ items: [] }))
+        fetch('/venues/catalog').then(r => r.json()).catch(() => ({ items: [] })),
+        fetch('/restaurants/search?store_id=1').then(r => r.json()).catch(() => ({ items: [] }))
       ])
       setRooms(roomsRes.items || roomsRes || [])
       setServices(servicesRes.items || servicesRes || [])
       setMovies(moviesRes.items || moviesRes || [])
       setVenues(venuesRes.items || venuesRes || [])
+      setRestaurants(restaurantsRes.items || restaurantsRes || [])
     } catch (e) {
       console.error('Load error:', e)
     } finally {
@@ -229,6 +244,46 @@ export function App() {
     }
   }
 
+  const searchAvailableTables = async () => {
+    if (!selectedRestaurant) return
+    try {
+      const res = await fetch(`/restaurants/tables/search?restaurant_id=${selectedRestaurant.id}&date=${restaurantDate}&time=${restaurantTime}&party_size=${partySize}`).then(r => r.json())
+      setAvailableTables(res.items || res || [])
+    } catch (e) {
+      console.error(e)
+      alert('Failed to search tables')
+    }
+  }
+
+  const bookTable = async () => {
+    if (!selectedRestaurant || !selectedTable) return
+    try {
+      const res = await fetch('/restaurants/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 90001,
+          storeId: 1,
+          restaurantId: selectedRestaurant.id,
+          tableTypeId: selectedTable.id,
+          bookingDate: restaurantDate,
+          bookingTime: restaurantTime,
+          partySize: partySize,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          specialRequests: specialRequests,
+          payment: { mode: 'at-venue' }
+        })
+      }).then(r => r.json())
+      setRestaurantBooking(res)
+      alert(`Table booked successfully! Booking ID: ${res.bookingId}`)
+      setSelectedTable(null)
+      setAvailableTables([])
+    } catch (e: any) {
+      alert('Booking failed: ' + e.message)
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -283,6 +338,12 @@ export function App() {
           onClick={() => setActiveTab('venues')}
         >
           🏛️ Venues
+        </button>
+        <button
+          style={{ ...styles.tab, background: activeTab === 'restaurants' ? '#667eea' : '#e0e0e0', color: activeTab === 'restaurants' ? 'white' : '#333' }}
+          onClick={() => setActiveTab('restaurants')}
+        >
+          🍽️ Restaurants
         </button>
       </div>
 
@@ -535,9 +596,108 @@ export function App() {
         </div>
       )}
 
+      {activeTab === 'restaurants' && (
+        <div>
+          <div style={styles.section}>
+            <h2>🍽️ Restaurant Table Booking</h2>
+            <p style={{ color: '#666', marginBottom: '20px' }}>Reserve tables at your favorite restaurants</p>
+
+            <div style={styles.grid}>
+              {restaurants.map((restaurant: any) => (
+                <div key={restaurant.id} style={styles.card}>
+                  <h3 style={{ margin: '0 0 10px 0' }}>{restaurant.name}</h3>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>🍴 {restaurant.cuisine_type}</p>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>🪑 {restaurant.total_capacity} seats</p>
+                  <p style={{ margin: '5px 0', fontSize: '12px', color: '#666' }}>{restaurant.description}</p>
+                  <button
+                    onClick={() => { setSelectedRestaurant(restaurant); setAvailableTables([]); setSelectedTable(null) }}
+                    style={{ ...styles.button, marginTop: '10px', background: selectedRestaurant?.id === restaurant.id ? '#764ba2' : '#667eea' }}
+                  >
+                    {selectedRestaurant?.id === restaurant.id ? '✓ Selected' : 'Book Table'}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {selectedRestaurant && (
+              <div style={{ ...styles.section, marginTop: '20px', background: '#fff8e1' }}>
+                <h3>Reserve at {selectedRestaurant.name}</h3>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                  <label>
+                    Date: <input type="date" value={restaurantDate} onChange={e => setRestaurantDate(e.target.value)} style={styles.input} />
+                  </label>
+                  <label>
+                    Time: <input type="time" value={restaurantTime} onChange={e => setRestaurantTime(e.target.value)} style={styles.input} />
+                  </label>
+                  <label>
+                    Party Size: <input type="number" min="1" max="20" value={partySize} onChange={e => setPartySize(Number(e.target.value))} style={styles.input} />
+                  </label>
+                  <button onClick={searchAvailableTables} style={styles.button}>Search Available Tables</button>
+                </div>
+
+                {availableTables.length > 0 && (
+                  <div style={{ marginTop: '15px' }}>
+                    <p><strong>Available Tables:</strong></p>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                      {availableTables.map((table: any) => (
+                        <button
+                          key={table.id}
+                          onClick={() => setSelectedTable(table)}
+                          style={{
+                            ...styles.button,
+                            background: selectedTable?.id === table.id ? '#764ba2' : table.table_type === 'vip' ? '#ff9800' : '#667eea',
+                            flex: '0 0 auto'
+                          }}
+                        >
+                          {table.table_type === 'vip' ? '⭐' : '🪑'} Table {table.table_number}<br />
+                          ({table.capacity} seats • {table.location})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedTable && (
+                  <div style={{ marginTop: '20px', padding: '15px', background: '#fff', borderRadius: '8px' }}>
+                    <h4>Booking Details</h4>
+                    <p><strong>Table:</strong> {selectedTable.table_number} ({selectedTable.table_type}, {selectedTable.capacity} seats)</p>
+                    <p><strong>Location:</strong> {selectedTable.location}</p>
+                    <p><strong>Date & Time:</strong> {restaurantDate} at {restaurantTime}</p>
+
+                    <div style={{ marginTop: '15px' }}>
+                      <label style={{ display: 'block', marginBottom: '10px' }}>
+                        Your Name: <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} style={styles.input} />
+                      </label>
+                      <label style={{ display: 'block', marginBottom: '10px' }}>
+                        Phone: <input type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} style={styles.input} />
+                      </label>
+                      <label style={{ display: 'block', marginBottom: '10px' }}>
+                        Special Requests: <textarea value={specialRequests} onChange={e => setSpecialRequests(e.target.value)} style={{ ...styles.input, height: '60px' }} placeholder="Birthday, anniversary, dietary restrictions, etc." />
+                      </label>
+                    </div>
+
+                    <button onClick={bookTable} style={{ ...styles.button, background: '#4caf50' }}>Confirm Table Reservation</button>
+                  </div>
+                )}
+
+                <button onClick={() => { setSelectedRestaurant(null); setAvailableTables([]); setSelectedTable(null) }} style={{ ...styles.button, background: '#999', marginTop: '10px' }}>Cancel</button>
+                {restaurantBooking && (
+                  <div style={{ marginTop: '15px', padding: '15px', background: '#e8f5e9', borderRadius: '8px' }}>
+                    <h4>✅ Reservation Confirmed!</h4>
+                    <p><strong>Booking ID:</strong> {restaurantBooking.bookingId}</p>
+                    <p><strong>Status:</strong> {restaurantBooking.status}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <footer style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '14px' }}>
-        <p>🧪 Demo System • {rooms.length} rooms • {services.length} services • {movies.length} movies • {venues.length} venues</p>
-        <p style={{ fontSize: '12px', marginTop: '5px' }}>Features: Date selection • Slot booking • Seat selection • Real-time availability • Payment integration</p>
+        <p>🧪 Demo System • {rooms.length} rooms • {services.length} services • {movies.length} movies • {venues.length} venues • {restaurants.length} restaurants</p>
+        <p style={{ fontSize: '12px', marginTop: '5px' }}>Features: Date selection • Slot booking • Seat selection • Table reservations • Real-time availability • Payment integration</p>
       </footer>
     </div>
   )

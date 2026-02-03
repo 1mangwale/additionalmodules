@@ -19,6 +19,7 @@ services:
       - venues-api
       - rooms-api
       - movies-api
+      - restaurants-api
     networks:
       - mangwale-network
     restart: unless-stopped
@@ -90,6 +91,25 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4005
+      - DB_HOST=mwv2-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mangwale_booking
+    networks:
+      - mangwale-network
+    restart: unless-stopped
+
+  restaurants-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.restaurants
+    container_name: mangwale-restaurants
+    ports:
+      - "4008:4008"
+    environment:
+      - NODE_ENV=production
+      - PORT=4008
       - DB_HOST=mwv2-postgres
       - DB_PORT=5432
       - DB_USER=postgres

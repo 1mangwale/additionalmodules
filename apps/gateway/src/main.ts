@@ -55,16 +55,24 @@ async function bootstrap() {
     pathRewrite: { '^/venues/vendor': '/vendor' },
     ...proxyCommon,
   }));
+  // Rewrite '/restaurants/vendor/*' -> '/vendor/*' targeting restaurants service (4008)
+  app.use('/restaurants/vendor', createProxyMiddleware({
+    target: 'http://localhost:4008',
+    pathRewrite: { '^/restaurants/vendor': '/vendor' },
+    ...proxyCommon,
+  }));
   app.use('/api/rooms', createProxyMiddleware({ target: 'http://localhost:4001', pathRewrite: { '^/api/rooms': '/rooms' }, ...proxyCommon }));
   app.use('/api/services', createProxyMiddleware({ target: 'http://localhost:4002', pathRewrite: { '^/api/services': '/services' }, ...proxyCommon }));
   app.use('/api/pricing', createProxyMiddleware({ target: 'http://localhost:4003', pathRewrite: { '^/api/pricing': '/pricing' }, ...proxyCommon }));
   app.use('/api/movies', createProxyMiddleware({ target: 'http://localhost:4005', pathRewrite: { '^/api/movies': '/movies' }, ...proxyCommon }));
   app.use('/api/venues', createProxyMiddleware({ target: 'http://localhost:4007', pathRewrite: { '^/api/venues': '/venues' }, ...proxyCommon }));
+  app.use('/api/restaurants', createProxyMiddleware({ target: 'http://localhost:4008', pathRewrite: { '^/api/restaurants': '/restaurants' }, ...proxyCommon }));
   // Movies (user + vendor)
   app.use('/movies', createProxyMiddleware({ target: 'http://localhost:4005', ...proxyCommon }));
   app.use('/rooms', createProxyMiddleware({ target: 'http://localhost:4001', ...proxyCommon }));
   app.use('/services', createProxyMiddleware({ target: 'http://localhost:4002', ...proxyCommon }));
   app.use('/venues', createProxyMiddleware({ target: 'http://localhost:4007', ...proxyCommon }));
+  app.use('/restaurants', createProxyMiddleware({ target: 'http://localhost:4008', ...proxyCommon }));
   app.use('/pricing', createProxyMiddleware({ target: 'http://localhost:4003', ...proxyCommon }));
   // Search API (external service on port 3100)
   app.use('/search', createProxyMiddleware({ target: 'http://localhost:3000', ...proxyCommon }));
